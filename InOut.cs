@@ -56,5 +56,22 @@ namespace Sem2Lab1
         {
             image.Save(name + "." + extension);
         }
+
+        public static void ShowHistogram(Dictionary<ushort, int> histogram, string name = "")
+        {
+            histogram.OrderBy(x => x.Key);
+            FormChart formChart = new FormChart(histogram, FormName: name);
+        }
+
+        public static void ShowCDF(int[] CDF, string name = "")
+        {
+            double[] dbCDF = new double[CDF.Count()];
+            for (int i = 0; i < CDF.Count(); i++)
+            {
+                dbCDF[i] = (double)CDF[i];
+            }
+            double IntervalY = dbCDF.Max() * 0.2;
+            FormChart formChart = new FormChart(dbCDF, FormName: "CDF " + name, IntervalY: IntervalY);
+        }
     }
 }

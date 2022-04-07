@@ -351,7 +351,7 @@ namespace Sem2Lab1
         /// <param name="image">Изображение</param>
         /// <param name="c">Коэффициент при гамма-преобразовании</param>
         /// <param name="degree">Степень гамма-преобразования</param>
-        /// <returns></returns>
+        /// <returns>Гамма-преобразование</returns>
         private static ushort[,] GammaTransformation(ushort[,] image, double c, double degree)
         {
             for (int x = 0; x < image.GetLength(0); x++)
@@ -363,5 +363,334 @@ namespace Sem2Lab1
             }
             return image;
         }
+
+        /// <summary>
+        /// Получить гистограму изображения
+        /// </summary>
+        /// <param name="image">Изображение</param>
+        /// <returns>Гистограма изображения</returns>
+        public static Dictionary<ushort, int> GetHistogram(ushort[,] image)
+        {
+            Dictionary<ushort, int> histogram = new Dictionary<ushort, int>();
+            for (int x = 0; x < image.GetLength(0); x++)
+            {
+                for (int y = 0; y < image.GetLength(1); y++)
+                {
+                    if (histogram.ContainsKey(image[x, y]))
+                    {
+                        histogram[image[x, y]]++;
+                    }
+                    else
+                    {
+                        histogram.Add(image[x, y], 1);
+                    }
+                }
+            }
+            int max = histogram.Keys.Max();
+
+            for (ushort i = 0; i <= max; i++)
+            {
+                if (!histogram.ContainsKey(i)) histogram.Add(i, 0);
+            }
+
+            return histogram;
+        }
+
+        /// <summary>
+        /// Получить функцию распределения
+        /// </summary>
+        /// <param name="histogram">Гистограма</param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static int[] GetCDF(Dictionary<ushort, int> histogram)
+        {
+            var dict = histogram.OrderBy(x => x.Key);
+            int[] CDF = new int[histogram.Keys.Max() + 1];
+            int index = 0;
+            foreach (var temp in dict)
+            {
+                CDF[index] = index == 0 ? temp.Value : CDF[index - 1] + temp.Value;
+                index++;
+            }
+            return CDF;
+        }
+
+        /// <summary>
+        /// Получить передаточную шкалу
+        /// </summary>
+        /// <param name="CDF"></param>
+        /// <returns></returns>
+        public static int[] GetTransferScale(int[] CDF)
+        {
+            int[] TransferScale = new int[CDF.Count()];
+            int max = CDF.Max();
+            double coeff = (double)(CDF.Count() - 1) / (double)max;
+            for (int i = 0; i < CDF.Count(); i++)
+            {
+                TransferScale[i] = (int)((double)CDF[i] * coeff);
+            }
+            return TransferScale;
+        }
+
+        public static ushort[,] ReplacePixelsFromCDF(ushort[,] image, int[] CDF)
+        {
+            for (int x = 0; x < image.GetLength(0); x++)
+            {
+                for (int y = 0; y < image.GetLength(1); y++)
+                {
+                    image[x, y] = (ushort)CDF[image[x, y]];
+                }
+            }
+            return image;
+        }
+
+        /// <summary>
+        /// Получить обратную функцию
+        /// </summary>
+        /// <param name="function">Исходная функция</param>
+        /// <returns>Обратная функция</returns>
+        public static int[] GetInverseFunction(int[] function)
+        {
+            int[] reverse_function = new int[function.Count()];
+            for (int i = 0; i < function.Count(); i++)
+            {
+                reverse_function[function[i]] = i;
+                //reverse_function[i] = (int)((double)i / (double)function[i]);
+            }
+            return reverse_function;
+        }
+        
+        /// <summary>
+        /// Действительная часть спектра Фурье
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        public static double Re(double[] x, int n)
+        {
+            int N = x.Count();
+            double sum = 0;
+            for (int k = 0; k < N; k++)
+            {
+                sum += x[k] * Math.Cos(2 * Math.PI * n * k / N);
+            }
+            return sum / (double)N;
+        }
+
+        /// <summary>
+        /// Мнимая часть спектра Фурье
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        public static double Im(double[] x, int n)
+        {
+            int N = x.Count();
+            double sum = 0;
+            for (int k = 0; k < N; k++)
+            {
+                sum += x[k] * Math.Sin(2 * Math.PI * n * k / N);
+            }
+            return sum / (double)N;
+        }
+
+        /// <summary>
+        /// Амплитудный спектр Фурье
+        /// </summary>
+        /// <param name="N"></param>
+        /// <returns></returns>
+        public static double[] GetAmplitudeSpectrum(double[] x, bool normal = false)
+        {
+            int N = x.Count();
+            int coeff = normal ? 1 : N;
+            double[] ASpectr = new double[N];
+            for (int n = 0; n < N; n++)
+            {
+                ASpectr[n] = Math.Sqrt(Math.Pow(Re(x, n), 2) + Math.Pow(Im(x, n), 2));
+            }
+            return ASpectr;
+        }
+
+        /// <summary>
+        /// Получить производную функции
+        /// </summary>
+        /// <param name="x"></param>
+        /// <returns></returns>
+        public static double[] GetDerivative(double[] x)
+        {
+            double[] derivative = new double[x.Count() - 1];
+            for (int i = 0; i < derivative.Count(); i++)
+            {
+                derivative[i] = x[i + 1] - x[i];
+            }
+            return derivative;
+        }
+
+        /// <summary>
+        /// Низкочастотный фильтр
+        /// </summary>
+        public static double[] LPF(int m, double fc, double dt)
+        {
+            double[] d = new double[4] { 0.35577019, 0.2436983, 0.07211497, 0.00630165 };
+            double fact = 2 * fc * dt;
+            double arg = Math.PI * fact;
+            double[] right_part = new double[m + 1];
+            right_part[0] = fact;
+            for (int i = 1; i <= m; i++)
+            {
+                right_part[i] = Math.Sin(arg * i) / (Math.PI * i);
+            }
+            right_part[m] /= 2;
+            double sumg = right_part[0];
+            for (int i = 1; i <= m; i++)
+            {
+                double sum = d[0];
+                arg = Math.PI * i / m;
+                for (int k = 1; k <= 3; k++)
+                {
+                    sum += 2 * d[k] * Math.Cos(arg * k);
+                }
+                right_part[i] *= sum;
+                sumg += 2 * right_part[i];
+            }
+            for (int i = 0; i <= m; i++)
+            {
+                right_part[i] /= sumg;
+            }
+
+            List<Double> result = new List<double>();
+            result.AddRange(right_part.Reverse().ToList());
+            result.RemoveAt(result.Count() - 1);
+            result.AddRange(right_part.ToList());
+
+            return result.ToArray();
+        }
+
+        /// <summary>
+        /// Полосно-заградительный фильтр (режекторный фильтр), fc1 < fc2
+        /// </summary>
+        /// <param name="LPF1">Низкочастотный фильтр с fc1</param>
+        /// <param name="LPF2">Низкочастотный фильтр с fc2</param>
+        /// <returns>ПЗФ</returns>
+        public static double[] BSF(double[] LPF1, double[] LPF2)
+        {
+            double[] BSF = new double[LPF1.Count()];
+            int m = (LPF1.Count() - 1) / 2;
+            for (int i = 0; i < LPF1.Count(); i++)
+            {
+                BSF[i] = i == m ? 1 + LPF1[i] - LPF2[i] : LPF1[i] - LPF2[i];
+            }
+            return BSF;
+        }
+
+        /// <summary>
+        /// Свёртка (линейное преобразование)
+        /// </summary>
+        /// <returns></returns>
+        public static double[] Convolution(double[] x, double[] h)
+        {
+            int size = x.Count() + h.Count();
+            double[] y = new double[size];
+            for (int k = 0; k < size; k++)
+            {
+                for (int j = 0; j < h.Count(); j++)
+                {
+                    if (k >= j && k - j < x.Count())
+                        y[k] += x[k - j] * h[j];
+                }
+            }
+            return y;
+        }
+
+        /// <summary>
+        /// Сгенерировать шум
+        /// </summary>
+        /// <param name="N">Размер шума</param>
+        /// <param name="type">Тип шума:
+        ///                    0 - cоль-перец;
+        ///                    1 - cлучайный шум;
+        ///                    2 - комбинированный шум</param>
+        /// <param name="scale">Точность случайного шума (количество знаков после запятой)</param>
+        /// <param name="frequency">Частота шума соль-перец (от 0 до 1)</param>
+        /// <param name="coeff">Коэффициент случайного шума</param>
+        /// <returns>Сгенерированный шум</returns>
+        public static double[] getNoise(int N, byte type, int scale = 3, double frequency = 0.4, double coeff = 2)
+        {
+            double[] noise = new double[N];
+            double limit = Math.Pow(10, scale);
+            Random rnd = new Random(); ;
+            switch (type)
+            {
+                case 0:
+                    for (int i = 0; i < N; i++)
+                    {
+                        noise[i] = 1;
+                    }
+                    for (int i = 0; i < frequency * N; i++)
+                    {
+                        int index = rnd.Next(0, N);
+                        noise[index] = rnd.Next(0, 2) == 0 ? -20000 : -10000;
+                    }
+                    break;
+                case 1:
+                    for (int i = 0; i < N; i++)
+                    {
+                        noise[i] = coeff * (double)rnd.Next(-(int)limit, (int)limit + 1) / limit;
+                    }
+                    break;
+                case 2:
+                    for (int i = 0; i < N; i++)
+                    {
+                        noise[i] = coeff * (double)rnd.Next(-(int)limit, (int)limit + 1) / limit;
+                    }
+                    for (int i = 0; i < frequency * N; i++)
+                    {
+                        int index = rnd.Next(0, N);
+                        noise[index] = rnd.Next(0, 2) == 0 ? -20000 : -10000;
+                    }
+                    break;
+            }
+            return noise;
+        }
+        
+        /// <summary>
+        /// Обратное преобразование Фурье
+        /// </summary>
+        /// <param name="fourier"></param>
+        /// <returns></returns>
+        public static double[] getInverseFourier(double[] fourier)
+        {
+            double[] inverseFourier = new double[fourier.Count()];
+
+            for (int i = 0; i < fourier.Count(); i++)
+            {
+                inverseFourier[i] = (Re(fourier, i) + Im(fourier, i));
+            }
+
+            return inverseFourier;
+        }
+
+        /// <summary>
+        /// Получить разность между изображениями
+        /// </summary>
+        /// <param name="image1"></param>
+        /// <param name="image2"></param>
+        /// <returns></returns>
+        public static ushort[,] getDiffImage(ushort[,] image1, ushort[,] image2)
+        {
+            ushort[,] Diff = new ushort[image1.GetLength(0), image1.GetLength(1)];
+
+            for (int x = 0; x < image1.GetLength(0); x++)
+            {
+                for (int y = 0; y < image1.GetLength(1); y++)
+                {
+                    Diff[x, y] = (ushort)Math.Abs(image1[x, y] - image2[x, y]);
+                }
+            }
+
+            return Diff;
+        }
+
+
     }
 }

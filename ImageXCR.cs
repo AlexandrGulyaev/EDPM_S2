@@ -10,10 +10,10 @@ namespace Sem2Lab1
 {
     class ImageXCR
     {
-        ushort[,] Image;
+        public ushort[,] Image;
         public ushort[,] ImageGS;
-        ushort min;
-        ushort max;
+        public ushort min;
+        public ushort max;
 
         /// <summary>
         /// Открыть изображение XCR
@@ -25,9 +25,13 @@ namespace Sem2Lab1
         /// <param name="swapBytes">Осуществлять ли перестановку байтов:
         ///                         true - осуществлять;
         ///                         false - не осуществлять.</param>
-        public ImageXCR(string filename, int width = 1024, int height = 1024, int startIndex = 2048, bool swapBytes = false)
+        /// <param name="extension">Расширение файла</param>
+        /// <param name="ToGS">Конвертировать в шкалу серости:
+        ///                    true  - конвертировать;
+        ///                    false - не конвертировать.</param>
+        public ImageXCR(string filename, int width = 1024, int height = 1024, int startIndex = 2048, bool swapBytes = false, string extension = "xcr", bool ToGS = true)
         {
-            byte[] buffer = File.ReadAllBytes(filename + ".xcr");
+            byte[] buffer = File.ReadAllBytes(filename + "." + extension);
             this.Image = new ushort[height, width];
             int x = 0, y = 0;
             for (int i = startIndex; i < buffer.Length; i++)
@@ -56,9 +60,9 @@ namespace Sem2Lab1
                     }
                 }
             }
-            ConvertToGrayscale();
             // Поскольку изображение перевернутое, его нужно отразить по вертикали
-            FlipImage();
+            Flip();
+            if (ToGS) ConvertToGrayscale();
         }
 
         /// <summary>
@@ -67,7 +71,7 @@ namespace Sem2Lab1
         /// </summary>
         /// <param name="ImageName">Наименование формы с изображением</param>
         /// <param name="ToGS">Привести к шкале серости перед сохранением (true)</param>
-        public void ShowImage(string ImageName = "", bool ToGS = true)
+        public void Show(string ImageName = "", bool ToGS = true)
         {
             if (ToGS) ConvertToGrayscale();
             FormImage formImage = new FormImage(ImageGS, ImageName);
@@ -116,29 +120,29 @@ namespace Sem2Lab1
         ///                 1 - по вертикали; 
         ///                 2 - и по вертикали, и по горизонтали</param>
         /// <returns></returns>
-        public void FlipImage(byte mode = 1)
+        public void Flip(byte mode = 1)
         {
-            ushort[,] temp = new ushort[ImageGS.GetLength(0), ImageGS.GetLength(1)];
+            ushort[,] temp = new ushort[Image.GetLength(0), Image.GetLength(1)];
 
-            for (int x = 0; x < ImageGS.GetLength(0); x++)
+            for (int x = 0; x < Image.GetLength(0); x++)
             {
-                for (int y = 0; y < ImageGS.GetLength(1); y++)
+                for (int y = 0; y < Image.GetLength(1); y++)
                 {
                     switch (mode)
                     {
                         case 0:
-                            temp[x, y] = ImageGS[ImageGS.GetLength(0) - x - 1, y];
+                            temp[x, y] = Image[Image.GetLength(0) - x - 1, y];
                             break;
                         case 1:
-                            temp[x, y] = ImageGS[x, ImageGS.GetLength(1) - y - 1];
+                            temp[x, y] = Image[x, Image.GetLength(1) - y - 1];
                             break;
                         default:
-                            temp[x, y] = ImageGS[ImageGS.GetLength(0) - x - 1, ImageGS.GetLength(1) - y - 1];
+                            temp[x, y] = Image[Image.GetLength(0) - x - 1, Image.GetLength(1) - y - 1];
                             break;
                     }
                 }
             }
-            ImageGS = temp;
+            Image = temp;
         }
 
         /// <summary>
@@ -148,7 +152,7 @@ namespace Sem2Lab1
         ///                  true - по часовой стрелке (CW);
         ///                  false - против часовой стрелки (CCW).</param>
         /// <param name="angle">Угол поворота в градусах(кратно 90)</param>
-        public void RotateImage(bool cw = true, int angle = 90)
+        public void Rotate(bool cw = true, int angle = 90)
         {
             ushort[,] temp;
             int width = ImageGS.GetLength(0);
@@ -201,7 +205,7 @@ namespace Sem2Lab1
         /// <param name="imageName">Имя файла</param>
         /// <param name="extension">Расширение файла</param>
         /// <param name="ToGS">Привести к шкале серости перед сохранением (true)</param>
-        public void SaveImage(string imageName, string extension = "xgs", bool ToGS = true)
+        public void Save(string imageName, string extension = "xgs", bool ToGS = true)
         {
             if (ToGS) ConvertToGrayscale();
             InOut.SaveImage(ConvertTypes.Ushort2DToBitmap(this.ImageGS), imageName, extension);
@@ -212,7 +216,7 @@ namespace Sem2Lab1
         /// </summary>
         /// <param name="coeff">Коэффициент масштабирования</param>
         /// <param name="nearestNeighbor"></param>
-        public void ResizeImage(double coeff, bool nearestNeighbor = true)
+        public void Resize(double coeff, bool nearestNeighbor = true)
         {
             this.Image = Model.ResizeImage(ConvertTypes.Ushort2DToByte2D(this.ImageGS), coeff, nearestNeighbor);
             //ConvertToGrayscale();
