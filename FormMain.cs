@@ -28,7 +28,7 @@ namespace Sem2Lab1
         FileData[] files;
 
         Image img;
-        string[] tasks = new string[8] {
+        string[] tasks = new string[14] {
             // Лабораторная работа №1
             "Реализовать методы загрузки, отображения, преобразования и сохранения файлов с изображением. Реализовать метод для приведения данных изображения к шкале серости." +
             "\nВ результате приложение должно иметь возможность:" +
@@ -104,7 +104,31 @@ namespace Sem2Lab1
             "\n  2. Реализовать прямое и обратное 2-D ПФ для изображения из файла." +
             "\n  3. Реализовать изменение размеров изображения из файла с помощью прямого ПФ, дополнения спектра нулями и обратного ПФ. " +
             "\n  4. Оценить качество всех “resizing”-методов с помощью вычитания и градационного преобразования разностного изображения." +
-            "\nФайл: grace.jpg"
+            "\nФайл: grace.jpg",
+
+            // Лабораторная работа №9
+            "Необходимо компенсировать искажения, произведенные известной искажающей 1-D функцией (смазывание в одном направлении). " +
+            "В качестве входных данных предоставляется искаженное изображение и файл с искажающей функцией.",
+
+            // Лабораторная работа №10
+            "Выделить контуры объектов на изображении посредством применения ФНЧ и ФВЧ, а также пороговых преобразований и арифметических операций по необходимости." +
+            "\nВыделить контуры на model.jpg, зашумленном смесью шумов и обработанном методами из ЛР №7.",
+
+            // Лабораторная работа №11
+            "Реализовать градиент (обычный и масками Собела по разным направлениям) и Лапласиан" +
+            " и применить их к изображению для выделения контуров. " +
+            "Изображения без шумов, зашумленных и обработанных методами из ЛР №7.",
+
+            // Лабораторная работа №12
+            "Реализовать операции эрозии и дилатации, применить их к изображению для выделения контуров." +
+            "\nМинимальные требования: отобразить изображения с контурами. Выделить контуры морфологическими операциями на изображениях, зашумленных и восстановленных методами из ЛР №7." +
+            "\nФайл: model.jpg",
+
+            // Лабораторная работа №13
+            "",
+
+            // Лабораторная работа №14
+            ""
         };
 
         public FormMain()
@@ -115,7 +139,7 @@ namespace Sem2Lab1
 
         private void initFiles()
         {
-            files = new FileData[9];
+            files = new FileData[12];
 
             files[0] = new FileData();
             files[0].filename = "c12-85v";
@@ -178,6 +202,24 @@ namespace Sem2Lab1
             files[8] = new FileData();
             files[8].filename = "model";
             files[8].extension = "png";
+
+            files[9] = new FileData();
+            files[9].filename = "blur307x221D";
+            files[9].extension = "dat";
+            files[9].width = 307;
+            files[9].height = 221;
+
+            files[10] = new FileData();
+            files[10].filename = "blur307x221D_N";
+            files[10].extension = "dat";
+            files[10].width = 307;
+            files[10].height = 221;
+
+            files[11] = new FileData();
+            files[11].filename = "kernD76_f4";
+            files[11].extension = "dat";
+            files[11].width = 307;
+            files[11].height = 1;
         }
 
         private void button_lab_Click(object sender, EventArgs e)
@@ -212,6 +254,24 @@ namespace Sem2Lab1
                     break;
                 case 24:
                     Lab8();
+                    break;
+                case 31:
+                    Lab9();
+                    break;
+                case 32:
+                    Lab10();
+                    break;
+                case 33:
+                    Lab11();
+                    break;
+                case 34:
+                    Lab12();
+                    break;
+                case 41:
+                    Lab13();
+                    break;
+                case 42:
+                    Lab14();
                     break;
                 default:
                     break;
@@ -361,7 +421,7 @@ namespace Sem2Lab1
         /// </summary>
         private void Lab5()
         {
-            FileData currFile = files[5];
+            FileData currFile = files[1];
             MyImage image;
             if (currFile.extension != "xcr" && currFile.extension != "xgs")
             { 
@@ -375,6 +435,7 @@ namespace Sem2Lab1
             string fullname = currFile.filename + "." + currFile.extension;
 
             image.Show(fullname);
+            image.Save(fullname);
 
             // Гистограмма изображения
             image.ShowHistogram(true, "до эквализации");
@@ -389,12 +450,14 @@ namespace Sem2Lab1
             image.ReplacePixelsFromCDF();
             //image.Save("Эквализация");
             image.Show(fullname + " эквализация");
+            image.Save(fullname + " эквализация");
             image.ShowHistogram(true, "после эквализации");
 
             // Обратная CDF
             image.GetInverseCDF();
             image.ReplacePixelsFromCDF(false);
             image.Show(fullname + " обратная");
+            image.Save(fullname + " обратная");
 
             image.ShowCDF(false, 2);
 
@@ -443,10 +506,12 @@ namespace Sem2Lab1
 
             image = new MyImage(currFile.filename, currFile.extension);
             image.AddNoise(2);
+            image.Save("Model с комбинированным шумом");
             image.Show("Наложение комбинированного шума", false);
-            image.ShowHistogram(name: "Гистограмма изображения с комбинированным");
+            //image.ShowHistogram(name: "Гистограмма изображения с комбинированным");
             image.SuppressNoise();
             image.Show("Подавление комбинированного шума медианным фильтром", false);
+            image.Save("Model с подавленным медианным фильтром шумом");
 
             // С усредняющим фильтром
             //image.AddNoise(0, frequency: 0.05);
@@ -462,17 +527,18 @@ namespace Sem2Lab1
             image.AddNoise(2);
             image.SuppressNoise(false);
             image.Show("Подавление комбинированного шума усредняющим фильтром", false);
+            image.Save("Model с подавленным усредняющим фильтром шумом");
 
 
-            image = new MyImage(currFile.filename, currFile.extension);
-            image.AddNoise(2);
-            image.SuppressNoise(false, 2);
-            image.Show("Подавление комбинированного шума усредняющим фильтром 2x2", false);
+            //image = new MyImage(currFile.filename, currFile.extension);
+            //image.AddNoise(2);
+            //image.SuppressNoise(false, 2);
+            //image.Show("Подавление комбинированного шума усредняющим фильтром 2x2", false);
 
-            image = new MyImage(currFile.filename, currFile.extension);
-            image.AddNoise(2);
-            image.SuppressNoise(true, 2);
-            image.Show("Подавление комбинированного шума медианным фильтром 2x2", false);
+            //image = new MyImage(currFile.filename, currFile.extension);
+            //image.AddNoise(2);
+            //image.SuppressNoise(true, 2);
+            //image.Show("Подавление комбинированного шума медианным фильтром 2x2", false);
         }
 
         /// <summary>
@@ -501,6 +567,8 @@ namespace Sem2Lab1
 
 
             // Часть вторая
+            MyImage image = new MyImage(currFile.filename, currFile.extension);
+
             MyImage imageFur = new MyImage("ResizeFourier2D", "jpg"); // Фурье
             imageFur.Show("Ресайз Фурье");
 
@@ -510,22 +578,328 @@ namespace Sem2Lab1
             MyImage imageBI = new MyImage("BI", "jpg"); // Билиненая интерполяция
             imageBI.Show("Билинейная интерполяция");
 
-            ushort[,] DiffFurAndNN = Model.getDiffImage(imageFur.image, imageNN.image); // Разность между Фурье и Ближайшим соседом
-            ushort[,] DiffFurAndBI = Model.getDiffImage(imageFur.image, imageBI.image); // Разность между Фурье и Билинейной интерполяцией
-            ushort[,] DiffNNAndBI = Model.getDiffImage(imageBI.image, imageNN.image); // Разность между Билинейной интерполяцией и Ближайшим соседом
+            short[,] DiffFurAndOrig = Model.getDiffImage(imageFur.image, image.image); // Разность между Фурье и оригиналом
+            short[,] DiffBIAndOrig = Model.getDiffImage(imageBI.image, image.image); // Разность между Билинейной интерполяцией и оригиналом
+            short[,] DiffNNAndOrig = Model.getDiffImage(imageNN.image, image.image); // Разность между Ближайшим соседом и оригиналом
 
             // Выполним градационное логарифмическое преобразование
-            DiffFurAndNN = Model.GradationTransformation(DiffFurAndNN, 1, 51, 3);
-            MyImage new_image = new MyImage(ConvertTypes.Ushort2DToBitmap(DiffFurAndNN));
-            new_image.Show();
+            ushort[,] UDiffFurAndOrig = Model.LogarithmicTransformation(DiffFurAndOrig, 51, 3);
+            MyImage new_image = new MyImage(ConvertTypes.Ushort2DToBitmap(UDiffFurAndOrig));
+            new_image.Show("Фурье vs Оригинал");
 
-            DiffFurAndBI = Model.GradationTransformation(DiffFurAndBI, 1, 51, 3);
-            MyImage new_image2 = new MyImage(ConvertTypes.Ushort2DToBitmap(DiffFurAndBI));
-            new_image2.Show();
+            ushort[,] UDiffBIAndOrig = Model.LogarithmicTransformation(DiffBIAndOrig, 51, 3);
+            MyImage new_image2 = new MyImage(ConvertTypes.Ushort2DToBitmap(UDiffBIAndOrig));
+            new_image2.Show("BI vs Оригинал");
 
-            DiffNNAndBI = Model.GradationTransformation(DiffNNAndBI, 1, 51, 3);
-            MyImage new_image3 = new MyImage(ConvertTypes.Ushort2DToBitmap(DiffNNAndBI));
-            new_image3.Show();
+            ushort[,] UDiffNNAndOrig = Model.LogarithmicTransformation(DiffNNAndOrig, 51, 3);
+            MyImage new_image3 = new MyImage(ConvertTypes.Ushort2DToBitmap(UDiffNNAndOrig));
+            new_image3.Show("NN vs Оригинал");
+        }
+
+
+        /// <summary>
+        /// Восстановить смазанное изображение
+        /// </summary>
+        private void Lab9()
+        {
+            //// Файл без шума
+            //FileData currFile = files[9];
+            //MyImage image = new MyImage(filename: currFile.filename + "." + currFile.extension,
+            //                            width: currFile.width,
+            //                            height: currFile.height);
+            //image.Show(currFile.filename + "." + currFile.extension);
+
+            //// Искажающая функция
+            //FileData currFileDist = files[11];
+            //MyImage imageDist = new MyImage(filename: currFileDist.filename + "." + currFileDist.extension,
+            //                            width: currFileDist.width,
+            //                            height: currFileDist.height);
+
+            //// Фурье 1Д файла без шума
+            //double[,] imageFourier, ArrRe, ArrIm;
+            //Model.getFourier(image.imageDouble, out imageFourier, out ArrRe, out ArrIm, false);
+
+            //// Фурье 1Д искажающей функции
+            //double[,] imageDistFourier, ArrReDist, ArrImDist;
+            //Model.getFourier(imageDist.imageDouble, out imageDistFourier, out ArrReDist, out ArrImDist, false);
+
+            //// Удаляем искажения
+            //imageFourier = Model.SuppressDistorsion(ArrRe, ArrIm, ArrReDist, ArrImDist);
+
+            //// Преобразуем Фурье обратно в изображение
+            //double[,] newImage;
+            //Model.getFourier(imageFourier, out newImage, out ArrRe, out ArrIm, false);
+
+            //image.image = ConvertTypes.Double2DToUshort2D(newImage);
+            //image.swapHalfes();
+            //image.Show();
+
+
+
+            // Файл с шумом
+            FileData currFileNoise = files[10];
+            MyImage imageNoise = new MyImage(filename: currFileNoise.filename + "." + currFileNoise.extension,
+                                        width: currFileNoise.width,
+                                        height: currFileNoise.height);
+            imageNoise.Show(currFileNoise.filename + "." + currFileNoise.extension);
+
+            // Искажающая функция
+            FileData currFileDist = files[11];
+            MyImage imageDist = new MyImage(filename: currFileDist.filename + "." + currFileDist.extension,
+                                        width: currFileDist.width,
+                                        height: currFileDist.height);
+
+            // Фурье 1Д файла с шумом
+            double[,] imageFourier, ArrRe, ArrIm;
+            Model.getFourier(imageNoise.imageDouble, out imageFourier, out ArrRe, out ArrIm, false);
+
+            // Фурье 1Д искажающей функции
+            double[,] imageDistFourier, ArrReDist, ArrImDist;
+            Model.getFourier(imageDist.imageDouble, out imageDistFourier, out ArrReDist, out ArrImDist, false);
+
+            // Удаляем искажения
+            imageFourier = Model.SuppressDistorsion(ArrRe, ArrIm, ArrReDist, ArrImDist, true);
+
+            // Преобразуем Фурье обратно в изображение
+            double[,] newImage;
+            Model.getFourier(imageFourier, out newImage, out ArrRe, out ArrIm, false);
+
+            imageNoise.image = ConvertTypes.Double2DToUshort2D(newImage);
+            imageNoise.swapHalfes();
+            imageNoise.Show();
+        }
+
+        /// <summary>
+        /// Выделить границы с помощью НЧФ и ВЧФ и пороговых преобразований (при необходимости)
+        /// Выделить границы на зашумлённом смесью шумов изображении.
+        /// Выделить границы на обработанном от шумов изображении.
+        /// Файл: model.jpg
+        /// </summary>
+        private void Lab10()
+        {
+            //FileData currFile = files[8];
+            //MyImage image = new MyImage(currFile.filename, currFile.extension);
+            //MyImage image2 = new MyImage(currFile.filename, currFile.extension);
+            //image.Show("Исходное изображение", false);
+
+            //image.ApplyFilter(filter_type: 1, fc1: 0.05, m: 32, mode: 2);
+
+            // Вычитание для ФВЧ не выполняется
+            //image.image = ConvertTypes.ShortToUshort2D(Model.getDiffImage(image.image, image2.image));
+
+            // ФНЧ: 150 для одномерного фильтра; 135 для двумерного
+            // ФВЧ: 17 для одномерного фильтра; 5 для двумерного
+            //image.ThresholdTransform(5); 
+            //image.Show("Контур", false);
+
+
+            /*
+             * ****************************
+             * ************ ФНЧ ***********
+             * ****************************
+             */
+
+            //MyImage imageWithNoise = new MyImage("Model с комбинированным шумом", "jpg");
+            //MyImage imageWithNoise2 = new MyImage("Model с комбинированным шумом", "jpg");
+            ////imageWithNoise.ThresholdTransform(190);
+            //imageWithNoise.ApplyFilter(filter_type: 0, fc1: 0.01, m: 32, mode: 2);
+            //imageWithNoise.image = ConvertTypes.ShortToUshort2D(Model.getDiffImage(imageWithNoise.image, imageWithNoise2.image));
+            //imageWithNoise.ThresholdTransform(170, true);
+            //imageWithNoise.Show("Контур", false);
+
+            //MyImage imageWithSuppAVGNoise = new MyImage("Model с подавленным усредняющим фильтром шумом", "jpg");
+            //MyImage imageWithSuppAVGNoise2 = new MyImage("Model с подавленным усредняющим фильтром шумом", "jpg");
+            //imageWithSuppAVGNoise.ApplyFilter(filter_type: 0, fc1: 0.01, m: 32, mode: 2);
+            //imageWithSuppAVGNoise.image = ConvertTypes.ShortToUshort2D(Model.getDiffImage(imageWithSuppAVGNoise.image, imageWithSuppAVGNoise2.image));
+            //imageWithSuppAVGNoise.ThresholdTransform(160);
+            //imageWithSuppAVGNoise.Show("Контур", false);
+
+
+            //MyImage imageWithSuppMedNoise = new MyImage("Model с подавленным медианным фильтром шумом", "jpg");
+            //MyImage imageWithSuppMedNoise2 = new MyImage("Model с подавленным медианным фильтром шумом", "jpg");
+            //imageWithSuppMedNoise.ApplyFilter(filter_type: 0, fc1: 0.01, m: 32, mode: 2);
+            //imageWithSuppMedNoise.image = ConvertTypes.ShortToUshort2D(Model.getDiffImage(imageWithSuppMedNoise.image, imageWithSuppMedNoise2.image));
+            //imageWithSuppMedNoise.ThresholdTransform(160, true);
+            //imageWithSuppMedNoise.Show("Контур", false);
+
+            /*
+             * ****************************
+             * ************ ФВЧ ***********
+             * ****************************
+             */
+
+            //MyImage imageWithNoise = new MyImage("Model с комбинированным шумом", "jpg");
+            //imageWithNoise.Show("Контур", false);
+            //imageWithNoise.ThresholdTransform(220, false, true);
+            //imageWithNoise.ApplyFilter(filter_type: 1, fc1: 0.00015, m: 32, mode: 2);
+            ////imageWithNoise.ThresholdTransform(45);
+            //imageWithNoise.Show("Контур", false);
+
+            //MyImage imageWithSuppAVGNoise = new MyImage("Model с подавленным усредняющим фильтром шумом", "jpg");
+            //imageWithSuppAVGNoise.Show("Контур", false);
+            ////imageWithSuppAVGNoise.ThresholdTransform(220, false, true);
+            //imageWithSuppAVGNoise.ApplyFilter(filter_type: 1, fc1: 0.00015, m: 32, mode: 2);
+            //imageWithSuppAVGNoise.ThresholdTransform(15);
+            //imageWithSuppAVGNoise.Show("Контур", false);
+
+
+            MyImage imageWithSuppMedNoise = new MyImage("Model с подавленным медианным фильтром шумом", "jpg");
+            imageWithSuppMedNoise.ApplyFilter(filter_type: 1, fc1: 0.00015, m: 32, mode: 2);
+            imageWithSuppMedNoise.ThresholdTransform(15);
+            imageWithSuppMedNoise.Show("Контур", false);
+
+        }
+
+        /// <summary>
+        /// Градиент и лапласиан 
+        /// </summary>
+        private void Lab11()
+        {
+            for (byte i = 1; i < 6; i++)
+            {
+                for (byte j = 0; j < 3; j++)
+                {
+                    string name = "Model ";
+                    switch (j)
+                    {
+                        case 0:
+                            name += "с комбинированным шумом";
+                            break;
+                        case 1:
+                            name += "с подавленным усредняющим фильтром шумом";
+                            break;
+                        default:
+                            name += "с подавленным медианным фильтром шумом";
+                            break;
+                    }
+                    MyImage image = new MyImage(name, "jpg");
+                    image.ApplyGradient(i, 2);
+                    switch (i)
+                    {
+                        case 1:
+                            name = "Превитт " + name;
+                            break;
+                        case 2:
+                            name = "Собель " + name;
+                            break;
+                        case 3:
+                            name = "Щарр " + name;
+                            break;
+                        case 4:
+                            name = "Лаплас " + name;
+                            break;
+                        default:
+                            name = "Лаплас c диагоналями " + name;
+                            break;
+                    }
+                    image.Show(name);
+                }
+            }
+
+            //for (byte i = 1; i < 6; i++)
+            //{
+            //    for (byte j = 0; j < 3; j++)
+            //    {
+            //        MyImage image = new MyImage("CHGK", "jpg");
+            //        image.ApplyGradient(i, j);
+            //        string name = "";
+            //        switch (i)
+            //        {
+            //            case 1:
+            //                name += "Превитт";
+            //                break;
+            //            case 2:
+            //                name += "Собель";
+            //                break;
+            //            case 3:
+            //                name += "Щарр";
+            //                break;
+            //            case 4:
+            //                name += "Лаплас";
+            //                break;
+            //            default:
+            //                name += "Лаплас с диагоналями";
+            //                break;
+            //        }
+            //        switch (j)
+            //        {
+            //            case 0:
+            //                name += " по строкам";
+            //                break;
+            //            case 1:
+            //                name += " по столбцам";
+            //                break;
+            //            default:
+            //                name += " двумерно";
+            //                image.Save(name);
+            //                break;
+            //        }
+            //        image.Show(name);
+            //    }
+            //}
+
+            //MyImage image = new MyImage("StarDestroyer", "jpg");
+            //image.ApplyGradient(0, 2);
+            //image.Save("StarDestroyer Превитт");
+            //image = new MyImage("StarDestroyer", "jpg");
+            //image.ApplyGradient(3, 2);
+            //image.Save("StarDestroyer Лаплас");
+        }
+
+        /// <summary>
+        /// Эррозия и дилатация
+        /// </summary>
+        private void Lab12()
+        {
+            FileData currFile = files[8];
+            //MyImage image = new MyImage(currFile.filename, currFile.extension);
+            //MyImage image = new MyImage("Model с комбинированным шумом", "jpg");
+            //MyImage image = new MyImage("Model с подавленным усредняющим фильтром шумом", "jpg");
+            MyImage image = new MyImage("Model с подавленным медианным фильтром шумом", "jpg");
+
+            int[,] mask = new int[3, 3]
+            {
+                { 1, 1, 1 },
+                { 1, 1, 1 },
+                { 1, 1, 1 }
+            };
+
+            // ДИЛАТАЦИЯ И ЭРОЗИЯ ИСХОДНОГО
+            image.ApplyDilatation(mask, 200);
+            image.Show("Дилатация");
+
+
+            // Нужно пересоздавать, потому что си шарп передаёт ссылку на массив, а не сам массив! Злостный сишарп! Фу таким быть!
+            mask = new int[3, 3]
+            {
+                { 1, 1, 1 },
+                { 1, 1, 1 },
+                { 1, 1, 1 }
+            };
+
+            //image = new MyImage(currFile.filename, currFile.extension);
+            //image = new MyImage("Model с комбинированным шумом", "jpg");
+            //image = new MyImage("Model с подавленным усредняющим фильтром шумом", "jpg");
+            image = new MyImage("Model с подавленным медианным фильтром шумом", "jpg");
+            image.ApplyErosion(mask, 200);
+            image.Show("Эрозия");
+
+            // ДИЛАТАЦИЯ И ЭРОЗИЯ ЗАШУМЛЕННОГО
+            //image = new MyImage(currFile.filename, currFile.extension);
+            //image.ApplyErosion(mask, 200);
+            //image.Show("Эрозия");
+
+
+
+        }
+
+        private void Lab13()
+        {
+        }
+
+        private void Lab14()
+        {
+
         }
     }
 }

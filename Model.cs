@@ -163,6 +163,37 @@ namespace Sem2Lab1
         }
 
         /// <summary>
+        /// Привести изображение к шкале серости
+        /// </summary>
+        /// <param name="image"></param>
+        /// <returns></returns>
+        public static ushort[,] ConvertToGrayscale(int[,] image)
+        {
+            ushort[,] imageGS = new ushort[image.GetLength(0), image.GetLength(1)];
+            int min = image[0, 0];
+            int max = image[0, 0];
+
+            for (int x = 0; x < image.GetLength(0); x++)
+            {
+                for (int y = 0; y < image.GetLength(1); y++)
+                {
+                    min = image[x, y] > min ? min : image[x, y];
+                    max = image[x, y] < max ? max : image[x, y];
+                }
+            }
+
+            for (int x = 0; x < image.GetLength(0); x++)
+            {
+                for (int y = 0; y < image.GetLength(1); y++)
+                {
+                    imageGS[x, y] = (ushort)((double)(image[x, y] - min) / (double)(max - min) * 255.0);
+                }
+            }
+
+            return imageGS;
+        }
+
+        /// <summary>
         /// Изменить размер изображения
         /// </summary>
         /// <param name="image">Изображение</param>
@@ -343,6 +374,47 @@ namespace Sem2Lab1
                 }
             }
             return image;
+        }
+
+        /// <summary>
+        /// Градационное логарифмическое преобразование
+        /// </summary>
+        /// <param name="image">Изображение</param>
+        /// <param name="c">Коэффициент при логарифмическом преобразовании</param>
+        /// <param name="degree">Степень логарифмического преобразования</param>
+        /// <returns></returns>
+        public static ushort[,] LogarithmicTransformation(short[,] image, double c, double degree)
+        {
+            for (int x = 0; x < image.GetLength(0); x++)
+            {
+                for (int y = 0; y < image.GetLength(1); y++)
+                {
+                    image[x, y] = (short)(c * Math.Log(1 + image[x, y], degree));
+                }
+            }
+
+            short min = image[0, 0];
+            short max = image[0, 0];
+            for (int x = 0; x < image.GetLength(0); x++)
+            {
+                for (int y = 0; y < image.GetLength(1); y++)
+                {
+                    min = image[x, y] < min ? image[x, y] : min;
+                    max = image[x, y] > max ? image[x, y] : max;
+                }
+            }
+
+            ushort[,] result = new ushort[image.GetLength(0), image.GetLength(1)];
+
+            for (int x = 0; x < image.GetLength(0); x++)
+            {
+                for (int y = 0; y < image.GetLength(1); y++)
+                {
+                    result[x, y] = (ushort)((double)(image[x,y] - min)/(double)(max - min) * 255.0);
+                }
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -567,6 +639,25 @@ namespace Sem2Lab1
         }
 
         /// <summary>
+        /// Высокочастотный фильтр
+        /// </summary>
+        /// <param name="LPF">Низкочастотный фильтр</param>
+        /// <returns>Высокочастотный фильтр</returns>
+        public static double[] HPF(double[] LPF)
+        {
+            double[] HPF = new double[LPF.Count()];
+            int m = (LPF.Count() - 1) / 2;
+            int k = 0;
+            foreach (double value in LPF)
+            {
+                HPF[k] = k == m ? 1 - value : -value;
+                k++;
+            }
+            return HPF;
+        }
+        
+
+        /// <summary>
         /// Полосно-заградительный фильтр (режекторный фильтр), fc1 < fc2
         /// </summary>
         /// <param name="LPF1">Низкочастотный фильтр с fc1</param>
@@ -673,24 +764,407 @@ namespace Sem2Lab1
         /// <summary>
         /// Получить разность между изображениями
         /// </summary>
-        /// <param name="image1"></param>
-        /// <param name="image2"></param>
+        /// <param name="image1">Ресайз</param>
+        /// <param name="image2">Оригинал</param>
         /// <returns></returns>
-        public static ushort[,] getDiffImage(ushort[,] image1, ushort[,] image2)
+        public static short[,] getDiffImage(ushort[,] image1, ushort[,] image2)
         {
-            ushort[,] Diff = new ushort[image1.GetLength(0), image1.GetLength(1)];
+            short[,] Diff = new short[image1.GetLength(0), image1.GetLength(1)];
+            double coeff = (double)image2.GetLength(0) / (double)image1.GetLength(0);
 
             for (int x = 0; x < image1.GetLength(0); x++)
             {
                 for (int y = 0; y < image1.GetLength(1); y++)
                 {
-                    Diff[x, y] = (ushort)Math.Abs(image1[x, y] - image2[x, y]);
+                    Diff[x, y] = (short)(image1[x, y] - image2[(int)((double)x * coeff), (int)((double)y * coeff)]);
                 }
             }
 
             return Diff;
         }
 
+        /// <summary>
+        /// Применить фильтр
+        /// </summary>
+        /// <param name="image">Изображение</param>
+        /// <param name="filter">Фильтр</param>
+        /// <param name="mode">Режим фильтрации: 0 - построчно; 1 - постолбцово; 2 - 2D-фильтрация</param>
+        /// <returns></returns>
+        public static ushort[,] applyFilter(ushort[,] image, double[] filter, byte mode = 0)
+        {
+            int width = image.GetLength(1);
+            int height = image.GetLength(0);
 
+            if (mode == 0 || mode == 2)
+            {
+                for (int i = 0; i < width; i++)
+                {
+                    double[] str = new double[height];
+                    for (int j = 0; j < height; j++)
+                    {
+                        str[j] = image[j, i];
+                    }
+
+                    str = Convolution(str, filter);
+                    int startIndex = (str.Count() - height) / 2;
+                    for (int j = startIndex; j < height + startIndex; j++)
+                    {
+                        image[j - startIndex, i] = (ushort)Math.Abs(str[j]);
+                    }
+                }
+            }
+            if (mode == 1 || mode == 2)
+            {
+                for (int i = 0; i < height; i++)
+                {
+                    double[] str = new double[width];
+                    for (int j = 0; j < width; j++)
+                    {
+                        str[j] = image[i, j];
+                    }
+
+                    str = Convolution(str, filter);
+                    int startIndex = (str.Count() - width) / 2;
+                    for (int j = startIndex; j < width + startIndex; j++)
+                    {
+                        image[i, j - startIndex] = (ushort)Math.Abs(str[j]);
+                    }
+                }
+            }
+            return image;
+        }
+
+        /// <summary>
+        /// Применить градиент
+        /// </summary>
+        /// <param name="image"></param>
+        /// <param name="maskX"></param>
+        /// <param name="maskY"></param>
+        /// <param name="direction">Направление:
+        ///       0 - вдоль строк;
+        ///       1 - вдоль столбцов;
+        ///       2 - двумерное</param>
+        /// <returns></returns>
+        public static ushort[,] applyGradient(ushort[,] image, int[,] maskX, int[,] maskY, byte direction = 0)
+        {
+            int[,] Gx = new int[image.GetLength(0), image.GetLength(1)];
+            int[,] Gy = new int[image.GetLength(0), image.GetLength(1)];
+            int[,] result = new int[image.GetLength(0), image.GetLength(1)];
+
+            for (int x = 0; x < image.GetLength(0); x++)
+            {
+                for (int y = 0; y < image.GetLength(1); y++)
+                {
+                    if (x == 0 || y == 0 || x == image.GetLength(0) - 1 || y == image.GetLength(1) - 1)
+                    {
+                        result[x, y] = image[x, y];
+                    }
+                    else
+                    {
+                        int[,] part = new int[3, 3]
+                        {
+                            { image[x - 1, y - 1], image[x, y - 1], image[x + 1, y - 1] },
+                            {     image[x - 1, y],     image[x, y],     image[x + 1, y] },
+                            { image[x - 1, y + 1], image[x, y + 1], image[x + 1, y + 1] }
+                        };
+
+                        for (int i = 0; i < 3; i++)
+                        {
+                            for (int j = 0; j < 3; j++)
+                            {
+                                if (direction == 0 || direction == 2)
+                                {
+                                    Gx[x, y] += part[i, j] * maskX[i, j];
+                                }
+                                if (direction == 1 || direction == 2)
+                                {
+                                    Gy[x, y] += part[i, j] * maskY[i, j];
+                                }
+                            }
+                        }
+                        result[x, y] = (int)(Math.Sqrt(Math.Pow(Gx[x, y], 2) + Math.Pow(Gy[x, y], 2)));
+                    }
+                }
+            }
+            return ConvertToGrayscale(result);
+        }
+
+        /// <summary>
+        /// Применить морфологическую операцию (дилатацию или эрозию)
+        /// </summary>
+        /// <param name="image">Изображение</param>
+        /// <param name="mask">Маска</param>
+        /// <param name="type">true - дилатация
+        ///                    false - эрозия</param>
+        /// <returns></returns>
+        public static ushort[,] ApplyMorphologicalOperation(ushort[,] image, int[,] mask, bool type = true)
+        {
+            int[,] result = new int[image.GetLength(0), image.GetLength(1)];
+
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    mask[i, j] = mask[i, j] == 1 ? 255 : 0;
+                }
+            }
+
+            for (int x = 0; x < image.GetLength(0); x++)
+            {
+                for (int y = 0; y < image.GetLength(1); y++)
+                {
+                    if (x == 0 || y == 0 || x == image.GetLength(0) - 1 || y == image.GetLength(1) - 1)
+                    {
+                        result[x, y] = image[x, y];
+                    }
+                    else
+                    {
+                        int[,] part = new int[3, 3]
+                        {
+                            { image[x - 1, y - 1], image[x, y - 1], image[x + 1, y - 1] },
+                            {     image[x - 1, y],     image[x, y],     image[x + 1, y] },
+                            { image[x - 1, y + 1], image[x, y + 1], image[x + 1, y + 1] }
+                        };
+
+                        int cnt = 0;
+                        bool flag = false;
+                        for (int i = 0; i < 3; i++)
+                        {
+                            for (int j = 0; j < 3; j++)
+                            {
+                                if (mask[i, j] != part[i, j] && type || mask[i, j] == part[i, j] && !type)
+                                {
+                                    cnt++;
+                                    flag = true;
+                                    break;
+                                }
+                                if (flag) break;
+                            }
+                        }
+                        if (type)
+                        {
+                            result[x, y] = cnt == 0 ? 0 : image[x, y];
+                        }
+                        else
+                        {
+                            result[x, y] = cnt == 0 ? 255 : image[x, y];
+                        }
+                    }
+                }
+            }
+
+            return ConvertToGrayscale(result);
+        }
+
+        /// <summary>
+        /// Деление комплексных чисел
+        /// </summary>
+        /// <param name="Re1"></param>
+        /// <param name="Im1"></param>
+        /// <param name="Re2"></param>
+        /// <param name="Im2"></param>
+        /// <param name="Re"></param>
+        /// <param name="Im"></param>
+        public static void DivisionComplexNumbers(double Re1, double Im1, double Re2, double Im2, out double Re, out double Im)
+        {
+            Re = (Re1 * Re2 + Im1 * Im2) / (Math.Pow(Re2, 2) + Math.Pow(Im2, 2));
+            Im = (Im1 * Re2 - Im2 * Re1) / (Math.Pow(Re2, 2) + Math.Pow(Im2, 2));
+        }
+        
+        /// <summary>
+        /// Модуль комплексного числа
+        /// </summary>
+        /// <param name="Re"></param>
+        /// <param name="Im"></param>
+        /// <returns></returns>
+        public static double AbsComplexNumber(double Re, double Im)
+        {
+            return Math.Sqrt(Re * Re + Im * Im);
+        }
+
+        /// <summary>
+        /// Умножение комплексных чисел
+        /// </summary>
+        /// <param name="Re1"></param>
+        /// <param name="Im1"></param>
+        /// <param name="Re2"></param>
+        /// <param name="Im2"></param>
+        /// <param name="Re"></param>
+        /// <param name="Im"></param>
+        public static void MultiplicationComplexNumbers(double Re1, double Im1, double Re2, double Im2, out double Re, out double Im)
+        {
+            Re = Re1 * Re2 - Im1 * Im2;
+            Im = Im1 * Re2 + Im2 * Re1;
+        }
+
+        /// <summary>
+        /// Комплексное преобразование Фурье
+        /// </summary>
+        /// <param name="image"></param>
+        /// <param name="Fourier"></param>
+        /// <param name="ArrRe"></param>
+        /// <param name="ArrIm"></param>
+        /// <param name="Is2D"></param>
+        /// <param name="mode">Режим работы:
+        ///     true - сначала построчный обход, потом постолбцовый;
+        ///     false - сначала постолбцовый обход, потом построчный.</param>
+        public static void getFourier(double[,] image, out double[,] Fourier, out double[,] ArrRe, out double[,] ArrIm, bool Is2D = true, bool mode = true)
+        {
+            int width = image.GetLength(0);
+            int height = image.GetLength(1);
+            double[,] FourierTmp = new double[width, height];
+            Fourier = new double[width, height];
+            ArrRe = new double[width, height];
+            ArrIm = new double[width, height];
+
+            if (mode)
+            {
+                // Обход по строкам
+                for (int y = 0; y < height; y++)
+                {
+                    // Выделяем строку
+                    double[] str = new double[width];
+                    for (int x = 0; x < width; x++)
+                    {
+                        str[x] = image[x, y];
+                    }
+                    for (int x = 0; x < width; x++)
+                    {
+                        ArrRe[x, y] = Re(str, x);
+                        ArrIm[x, y] = Im(str, x);
+                        Fourier[x, y] = ArrRe[x, y] + ArrIm[x, y];
+                        FourierTmp[x, y] = ArrRe[x, y] + ArrIm[x, y];
+                    }
+                }
+
+                if (Is2D)
+                {
+                    // Обход по столбцам
+                    for (int x = 0; x < width; x++)
+                    {
+                        // Выделяем колонку
+                        double[] str = new double[height];
+                        for (int y = 0; y < height; y++)
+                        {
+                            str[y] = FourierTmp[x, y];
+                        }
+                        for (int y = 0; y < height; y++)
+                        {
+                            ArrRe[x, y] = Re(str, y);
+                            ArrIm[x, y] = Im(str, y);
+                            Fourier[x, y] = ArrRe[x, y] + ArrIm[x, y];
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Обход по столбцам
+                for (int x = 0; x < width; x++)
+                {
+                    // Выделяем колонку
+                    double[] str = new double[height];
+                    for (int y = 0; y < height; y++)
+                    {
+                        str[y] = image[x, y];
+                    }
+                    for (int y = 0; y < height; y++)
+                    {
+                        ArrRe[x, y] = Re(str, y);
+                        ArrIm[x, y] = Im(str, y);
+                        Fourier[x, y] = ArrRe[x, y] + ArrIm[x, y];
+                        FourierTmp[x, y] = ArrRe[x, y] + ArrIm[x, y];
+                    }
+                }
+
+                if (Is2D)
+                {
+                    // Обход по строкам
+                    for (int y = 0; y < height; y++)
+                    {
+                        // Выделяем строку
+                        double[] str = new double[width];
+                        for (int x = 0; x < width; x++)
+                        {
+                            str[x] = FourierTmp[x, y];
+                        }
+                        for (int x = 0; x < width; x++)
+                        {
+                            ArrRe[x, y] = Re(str, x);
+                            ArrIm[x, y] = Im(str, x);
+                            Fourier[x, y] = ArrRe[x, y] + ArrIm[x, y];
+                        }
+                    }
+                }
+            }
+        }
+
+        public static void getFourier(ushort[,] image, out double[,] Fourier, out double[,] ArrRe, out double[,] ArrIm, bool Is2D = true, bool mode = true)
+        {
+            double[,] new_image = new double[image.GetLength(0), image.GetLength(1)];
+            for (int x = 0; x < image.GetLength(0); x++)
+            {
+                for (int y = 0; y < image.GetLength(1); y++)
+                {
+                    new_image[x, y] = (double)image[x, y];
+                }
+            }
+            getFourier(new_image, out Fourier, out ArrRe, out ArrIm, Is2D, mode);
+        }
+
+
+        /// <summary>
+        /// Подавить искажения
+        /// </summary>
+        /// <param name="ArrRe"></param>
+        /// <param name="ArrIm"></param>
+        /// <param name="ArrReDist"></param>
+        /// <param name="ArrImDist"></param>
+        /// <param name="isNoise"></param>
+        /// <returns></returns>
+        public static double[,] SuppressDistorsion(double[,] ArrRe, double[,] ArrIm, double[,] ArrReDist, double[,] ArrImDist, bool isNoise = false, double alpha = 0.1)
+        {
+            double[,] Fourier = new double[ArrRe.GetLength(0), ArrRe.GetLength(1)];
+
+            if (!isNoise)
+            {
+                for (int x = 0; x < ArrRe.GetLength(0); x++)
+                {
+                    for (int y = 0; y < ArrRe.GetLength(1); y++)
+                    {
+                        double newRe, newIm;
+                        DivisionComplexNumbers(ArrRe[x, y], ArrIm[x, y], ArrReDist[x, 0], ArrImDist[x, 0], out newRe, out newIm);
+                        Fourier[x, y] = newRe + newIm;
+                    }
+                }
+            }
+            else
+            {
+                double[,] ArrReAbs = new double[ArrReDist.GetLength(0), ArrReDist.GetLength(1)]
+                        , ArrImAbs = new double[ArrReDist.GetLength(0), ArrReDist.GetLength(1)]
+                        , ArrImConjugate = new double[ArrReDist.GetLength(0), ArrReDist.GetLength(1)]
+                        , SRe = new double[ArrReDist.GetLength(0), ArrReDist.GetLength(1)]
+                        , SIm = new double[ArrReDist.GetLength(0), ArrReDist.GetLength(1)];
+                for (int x = 0; x < ArrRe.GetLength(0); x++)
+                {
+                    ArrReAbs[x, 0] = Math.Pow(AbsComplexNumber(ArrReDist[x, 0], ArrImDist[x, 0]), 2);
+                    ArrReAbs[x, 0] += alpha * alpha;
+                    ArrImConjugate[x, 0] = -ArrImDist[x, 0];
+                    DivisionComplexNumbers(ArrReDist[x, 0], ArrImConjugate[x, 0], ArrReAbs[x, 0], ArrImAbs[x, 0], out SRe[x, 0], out SIm[x, 0]);
+                }
+
+                for (int x = 0; x < ArrRe.GetLength(0); x++)
+                {
+                    for (int y = 0; y < ArrRe.GetLength(1); y++)
+                    {
+                        double newRe, newIm;
+                        MultiplicationComplexNumbers(ArrRe[x, y], ArrIm[x, y], SRe[x, 0], SIm[x, 0], out newRe, out newIm);
+                        Fourier[x, y] = newRe + newIm;
+                    }
+                }
+
+            }
+            return Fourier;
+        }
     }
 }

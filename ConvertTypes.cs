@@ -57,6 +57,29 @@ namespace Sem2Lab1
             return result;
         }
 
+        public static ushort[,] ShortToUshort2D(short[,] data)
+        {
+            int width = data.GetLength(0);
+            int height = data.GetLength(1);
+            ushort[,] result = new ushort[width, height];
+            short min = data[0, 0];
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    min = data[x, y] < min ? data[x, y] : min;
+                }
+            }
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    result[x, y] = (ushort)(data[x, y] + Math.Abs(min));
+                }
+            }
+            return result;
+        }
+
         public static byte[,] Ushort2DToByte2D(ushort[,] data)
         {
             int width = data.GetLength(0);
@@ -112,6 +135,29 @@ namespace Sem2Lab1
                 for (int y = 0; y < height; y++)
                 {
                     result[x, y] = data.GetPixel(x, y).R;
+                }
+            }
+            return result;
+        }
+
+        public static ushort[,] Double2DToUshort2D(double[,] data)
+        {
+            ushort[,] result = new ushort[data.GetLength(0), data.GetLength(1)];
+            double min = data[0, 0];
+            double max = data[0, 0];
+            for (int x = 0; x < data.GetLength(0); x++)
+            {
+                for (int y = 0; y < data.GetLength(1); y++)
+                {
+                    min = data[x, y] < min ? data[x, y] : min;
+                    max = data[x, y] > max ? data[x, y] : max;
+                }
+            }
+            for (int x = 0; x < data.GetLength(0); x++)
+            {
+                for (int y = 0; y < data.GetLength(1); y++)
+                {
+                    result[x, y] = (ushort)((data[x, y] - min) / (max - min) * 255.0);
                 }
             }
             return result;
