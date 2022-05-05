@@ -62,19 +62,20 @@ namespace Sem2Lab1
             int width = data.GetLength(0);
             int height = data.GetLength(1);
             ushort[,] result = new ushort[width, height];
-            short min = data[0, 0];
+            short min = data[0, 0], max = data[0, 0];
             for (int x = 0; x < width; x++)
             {
                 for (int y = 0; y < height; y++)
                 {
                     min = data[x, y] < min ? data[x, y] : min;
+                    max = data[x, y] > max ? data[x, y] : max;
                 }
             }
             for (int x = 0; x < width; x++)
             {
                 for (int y = 0; y < height; y++)
                 {
-                    result[x, y] = (ushort)(data[x, y] + Math.Abs(min));
+                    result[x, y] = (ushort)((double)(data[x, y] - min) / (double)(max - min) * 255.0);
                 }
             }
             return result;

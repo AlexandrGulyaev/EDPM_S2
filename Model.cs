@@ -779,7 +779,6 @@ namespace Sem2Lab1
                     Diff[x, y] = (short)(image1[x, y] - image2[(int)((double)x * coeff), (int)((double)y * coeff)]);
                 }
             }
-
             return Diff;
         }
 
@@ -794,6 +793,7 @@ namespace Sem2Lab1
         {
             int width = image.GetLength(1);
             int height = image.GetLength(0);
+            double[,] result = new double[image.GetLength(0), image.GetLength(1)];
 
             if (mode == 0 || mode == 2)
             {
@@ -809,7 +809,7 @@ namespace Sem2Lab1
                     int startIndex = (str.Count() - height) / 2;
                     for (int j = startIndex; j < height + startIndex; j++)
                     {
-                        image[j - startIndex, i] = (ushort)Math.Abs(str[j]);
+                        result[j - startIndex, i] = str[j];
                     }
                 }
             }
@@ -820,18 +820,18 @@ namespace Sem2Lab1
                     double[] str = new double[width];
                     for (int j = 0; j < width; j++)
                     {
-                        str[j] = image[i, j];
+                        str[j] = mode == 2 ? result[i, j] : image[i, j];
                     }
 
                     str = Convolution(str, filter);
                     int startIndex = (str.Count() - width) / 2;
                     for (int j = startIndex; j < width + startIndex; j++)
                     {
-                        image[i, j - startIndex] = (ushort)Math.Abs(str[j]);
+                        result[i, j - startIndex] = str[j];
                     }
                 }
             }
-            return image;
+            return ConvertTypes.Double2DToUshort2D(result);
         }
 
         /// <summary>

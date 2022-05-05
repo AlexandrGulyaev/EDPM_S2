@@ -684,12 +684,12 @@ namespace Sem2Lab1
 
             //image.ApplyFilter(filter_type: 1, fc1: 0.05, m: 32, mode: 2);
 
-            // Вычитание для ФВЧ не выполняется
-            //image.image = ConvertTypes.ShortToUshort2D(Model.getDiffImage(image.image, image2.image));
+            ////Вычитание для ФВЧ не выполняется
+            ////image.image = ConvertTypes.ShortToUshort2D(Model.getDiffImage(image.image, image2.image));
 
-            // ФНЧ: 150 для одномерного фильтра; 135 для двумерного
-            // ФВЧ: 17 для одномерного фильтра; 5 для двумерного
-            //image.ThresholdTransform(5); 
+            ////ФНЧ: 210, 177 для одномерного фильтра; 173 для двумерного
+            ////ФВЧ: 105, 125 для одномерного фильтра; 131 для двумерного
+            //image.ThresholdTransform(131);
             //image.Show("Контур", false);
 
 
@@ -701,25 +701,24 @@ namespace Sem2Lab1
 
             //MyImage imageWithNoise = new MyImage("Model с комбинированным шумом", "jpg");
             //MyImage imageWithNoise2 = new MyImage("Model с комбинированным шумом", "jpg");
-            ////imageWithNoise.ThresholdTransform(190);
-            //imageWithNoise.ApplyFilter(filter_type: 0, fc1: 0.01, m: 32, mode: 2);
+            //imageWithNoise.ApplyFilter(filter_type: 0, fc1: 0.05, m: 32, mode: 2);
             //imageWithNoise.image = ConvertTypes.ShortToUshort2D(Model.getDiffImage(imageWithNoise.image, imageWithNoise2.image));
-            //imageWithNoise.ThresholdTransform(170, true);
+            //imageWithNoise.ThresholdTransform(150);
             //imageWithNoise.Show("Контур", false);
 
             //MyImage imageWithSuppAVGNoise = new MyImage("Model с подавленным усредняющим фильтром шумом", "jpg");
             //MyImage imageWithSuppAVGNoise2 = new MyImage("Model с подавленным усредняющим фильтром шумом", "jpg");
-            //imageWithSuppAVGNoise.ApplyFilter(filter_type: 0, fc1: 0.01, m: 32, mode: 2);
+            //imageWithSuppAVGNoise.ApplyFilter(filter_type: 0, fc1: 0.05, m: 32, mode: 2);
             //imageWithSuppAVGNoise.image = ConvertTypes.ShortToUshort2D(Model.getDiffImage(imageWithSuppAVGNoise.image, imageWithSuppAVGNoise2.image));
-            //imageWithSuppAVGNoise.ThresholdTransform(160);
+            //imageWithSuppAVGNoise.ThresholdTransform(173);
             //imageWithSuppAVGNoise.Show("Контур", false);
 
 
             //MyImage imageWithSuppMedNoise = new MyImage("Model с подавленным медианным фильтром шумом", "jpg");
             //MyImage imageWithSuppMedNoise2 = new MyImage("Model с подавленным медианным фильтром шумом", "jpg");
-            //imageWithSuppMedNoise.ApplyFilter(filter_type: 0, fc1: 0.01, m: 32, mode: 2);
+            //imageWithSuppMedNoise.ApplyFilter(filter_type: 0, fc1: 0.05, m: 32, mode: 2);
             //imageWithSuppMedNoise.image = ConvertTypes.ShortToUshort2D(Model.getDiffImage(imageWithSuppMedNoise.image, imageWithSuppMedNoise2.image));
-            //imageWithSuppMedNoise.ThresholdTransform(160, true);
+            //imageWithSuppMedNoise.ThresholdTransform(185);
             //imageWithSuppMedNoise.Show("Контур", false);
 
             /*
@@ -729,23 +728,19 @@ namespace Sem2Lab1
              */
 
             //MyImage imageWithNoise = new MyImage("Model с комбинированным шумом", "jpg");
-            //imageWithNoise.Show("Контур", false);
-            //imageWithNoise.ThresholdTransform(220, false, true);
-            //imageWithNoise.ApplyFilter(filter_type: 1, fc1: 0.00015, m: 32, mode: 2);
-            ////imageWithNoise.ThresholdTransform(45);
+            //imageWithNoise.ApplyFilter(filter_type: 1, fc1: 0.05, m: 32, mode: 2);
+            //imageWithNoise.ThresholdTransform(180);
             //imageWithNoise.Show("Контур", false);
 
             //MyImage imageWithSuppAVGNoise = new MyImage("Model с подавленным усредняющим фильтром шумом", "jpg");
-            //imageWithSuppAVGNoise.Show("Контур", false);
-            ////imageWithSuppAVGNoise.ThresholdTransform(220, false, true);
-            //imageWithSuppAVGNoise.ApplyFilter(filter_type: 1, fc1: 0.00015, m: 32, mode: 2);
-            //imageWithSuppAVGNoise.ThresholdTransform(15);
+            //imageWithSuppAVGNoise.ApplyFilter(filter_type: 1, fc1: 0.05, m: 32, mode: 2);
+            //imageWithSuppAVGNoise.ThresholdTransform(173);
             //imageWithSuppAVGNoise.Show("Контур", false);
 
 
             MyImage imageWithSuppMedNoise = new MyImage("Model с подавленным медианным фильтром шумом", "jpg");
-            imageWithSuppMedNoise.ApplyFilter(filter_type: 1, fc1: 0.00015, m: 32, mode: 2);
-            imageWithSuppMedNoise.ThresholdTransform(15);
+            imageWithSuppMedNoise.ApplyFilter(filter_type: 1, fc1: 0.05, m: 32, mode: 2);
+            imageWithSuppMedNoise.ThresholdTransform(120);
             imageWithSuppMedNoise.Show("Контур", false);
 
         }
